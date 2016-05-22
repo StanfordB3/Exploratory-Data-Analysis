@@ -1,0 +1,238 @@
+---
+title: "Coursera Exploratory Data Analysis Course"
+output: html_document
+---
+
+The **Exploratory Data Analysis** is a certification course as the Week 4 requirement towards the completion. The course is offered by *Johns Hopkins Bloomberg School of Public Health* in conjunction with the Coursera. 
+
+This work is exploratory or preliminary analysis of trend in PM2.5 emissions. The PM2.5 data collected by the National Environmental Agency. The data used in this work were made available by the course instructor Prof. Roger Peng and can be found 
+-   [Data for Peer Assessment [29Mb]](https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2FNEI_data.zip)
+An extensive analysis of the data was carried out. However, per requirements only limited sets of plots are included below.  This document is an R's *knitr* package excutable which also executes the codes and generates figure. 
+
+This is document is beyond the requirement of the course assignment. Complete discription of the assignement is available 
+[here](https://www.coursera.org/learn/exploratory-data-analysis/peer/b5Ecl/course-project-2). 
+
+## Week 4 Assignment
+
+### Plot 1.
+
+1. Using the base plotting system, make a plot showing the total PM2.5 emission from all sources for each of the years 1999, 2002, 2005, and 2008.
+
+
+```{r plot1}
+## This first line will likely take a few seconds. Be patient!
+NEI <- readRDS("summarySCC_PM25.rds")
+# SCC <- readRDS("Source_Classification_Code.rds")
+
+# Turn off warning messages globally
+options(warn=-1)
+
+# 1.  Have total emissions from PM2.5 decreased in the United States from 1999 to 2008? 
+## Using the base plotting system, make a plot showing the total PM2.5 emission from all sources 
+## for each of the years 1999, 2002, 2005, and 2008.
+
+# Trend in emissions:
+E2008 = subset(NEI, year="2008")
+# png(filename = "plot1.png", width = 480, height = 480, units = "px")
+
+```
+
+#### Figure 1. Trend in Overall Emission of PM2.5 in USA from 1999-2008, Tons
+
+```{r fig.width=7, fig.highlight=6}
+par(mfrow=c(1,1), mar=c(4,4,2, 1))
+boxplot(log10(Emissions) ~ year, data = NEI, col = "green", ylim=c(-4, 5), xlab="Year", ylab="Total PM2.5 Emissions, Tons")
+abline(h = log10(median(E2008$Emissions)), col="red", lwd =2)
+title("Trend in Overall Emission of PM2.5 in USA from 1999-2008, Tons")
+legend("topright", lty = c(1), col = c("red"), legend=c("Median 2008"))
+
+# dev.off()
+```
+
+### Plot 2
+2.  Have total emissions from PM2.5 decreased in the Baltimore City, Maryland (fips == "24510") from 1999 to 2008? 
+-   Use the base plotting system to make a plot answering this question.
+
+```{r plot2}
+
+#2.  Have total emissions from PM2.5 decreased in the Baltimore City, Maryland (fips == "24510") 
+## from 1999 to 2008? Use the base plotting system to make a plot answering this question.
+
+NEIB  <- subset(NEI, fips == "24510")
+E2008  <- subset(NEI, year == 2008 & fips == "24510")
+```
+
+#### Figure 2. Baltimore C: Trend in Overall Emission of PM2.5 from 1999-2008, Tons"
+
+```{r fig.width=7, fig.height=6}
+#png(filename = "plot2.png", width = 480, height = 480, units = "px")
+
+par(mfrow=c(1,1), mar=c(4,4,2, 1))
+
+boxplot(log10(Emissions) ~ year, data = NEIB, col = "green",  xlab="Year", ylab="Total PM2.4 Emissions, Tons")
+abline(h = log10(median(E2008$Emissions)), col="red", lwd =2)
+title("Baltimore: Trend in Overall Emission of PM2.5 from 1999-2008, Tons")
+legend("topright", lty = c(1), col = c("red"), legend=c("2008 Median"))
+#dev.off()
+
+```
+
+### Plot 3.
+
+3.  Of the four types of sources indicated by the type (point, nonpoint, onroad, nonroad) variable, 
+-   which of these four sources have seen decreases in emissions from 1999–2008 for Baltimore City? 
+-   Which have seen increases in emissions from 1999–2008? 
+-   Use the ggplot2 plotting system to make a plot answer this question.
+
+```{r plot3}
+# 3.  Of the four types of sources indicated by the type (point, nonpoint, onroad, nonroad) variable,
+## which of these four sources have seen decreases in emissions 
+## from 1999–2008 for Baltimore City?
+## Which have seen increases in emissions from 1999–2008? 
+## Use the ggplot2 plotting system to make a plot answer this question.
+library(ggplot2)
+Baltimore <- subset(NEI, fips == "24510")
+B1 <- subset(NEI, fips == "24510" & type == "NONPOINT")
+```
+
+#### Figure 3.  Baltimore City - Trend in Pollutant by Type.
+
+```{r fig.width=7, fig.height=6}
+# Open "png" graphics device
+# png(filename = "plot3.png", width = 480, height = 480, units = "px")
+
+g <- ggplot(Baltimore, aes(year, Emissions))
+g <- g + geom_point() + geom_smooth(method = "lm") + facet_grid(.~type) + 
+    ggtitle("Baltimore City :: Pollutant Trend by Type") + ylim(0, 25) + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+    ylab("Emissions, tons")
+print(g)
+
+# dev.off()
+```
+
+
+### Plot 4.
+
+4. Across the United States, how have emissions from coal combustion-related sources changed from 1999–2008?
+
+
+```{r  plot4}
+# We will need to read the SCC file
+SCC <- readRDS("Source_Classification_Code.rds")
+
+#4.  Across the United States, how have emissions from coal combustion-related 
+    ## sources changed from 1999–2008?
+library(dplyr)
+mrg <- merge(SCC, NEI, by.x = "SCC", by.y = "SCC")
+x <- grep("Coal", mrg$EI.Sector)
+Coal <- mrg[x, ]
+Coal1 <- select(Coal, fips:year)
+mrg <- merge(SCC, NEI, by.x = "SCC", by.y = "SCC")
+x <- grep("Coal", mrg$EI.Sector)
+Coal <- mrg[x, ]
+Coal1 <- select(Coal, fips:year)
+```
+
+#### Figure 4. Baltimore - PM2.5 Contribution by Combustible Coal Emissions and Trend
+
+```{r fig.width=7, fig.height=6}
+# Open "png" graphics device
+# png(filename = "plot4.png", width = 480, height = 480, units = "px")
+
+g <- ggplot(Coal1, aes(factor(year), log10(Emissions))) + geom_boxplot() + 
+   xlab("Year") + ylab("log10(PM2.5 Emissions, Tons)") +
+    ggtitle("Baltimore: PM2.5 Combustible Coal Emissions Trend") +
+    geom_smooth(method = "lm", se=FALSE, color="green", aes(group=1)) 
+print(g)
+
+# dev.off()
+```
+
+### Plot 5.
+5. How have emissions from motor vehicle sources changed from 1999–2008 in Baltimore City?
+
+```{r Plot 5}
+#5. How have emissions from motor vehicle sources changed from 1999–2008 in Baltimore City?
+library(stringr)
+library(grid)
+
+mrg <- merge(SCC, NEI, by.x = "SCC", by.y = "SCC")
+x <- grep("Vehicle", mrg$EI.Sector)
+V <- mrg[x, ]
+V1 <- select(V, fips:year)
+V2 <- subset(V1, fips == "24510")
+```
+
+#### Figure 5.  Baltimore - Trend PM2.5 from Vehicular Emissions.
+
+```{r fig.width=7, fig.height=6}
+# Open "png" graphics device
+# png(filename = "plot5.png", width = 480, height = 480, units = "px")
+
+g <- ggplot(V2, aes(factor(year), Emissions)) + geom_boxplot() + 
+    ylim(0, 5) + xlab("Year") + ylab("PM2.5 Emissions, Tons") +
+    ggtitle("Baltimore: PM2.5 Vehicle Emissions Trend") +
+    geom_smooth(method = "lm", se=FALSE, color="green", aes(group=1)) 
+print(g)
+
+#dev.off()
+```
+
+6. Compare emissions from motor vehicle sources in Baltimore City with emissions from motor vehicle sources in Los Angeles County, California (fips == "06037"). 
+-   Which city has seen greater changes over time in motor vehicle emissions?
+
+
+```{r Plot 6}
+## This first line will likely take a few seconds. Be patient!
+
+#6. Compare emissions from motor vehicle sources in Baltimore City 
+## with emissions from motor vehicle sources in 
+## Los Angeles County, California (fips == "06037"). 
+## Which city has seen greater changes over time in motor vehicle emissions?
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(grid)
+require(gridExtra)
+
+# Merge the the SCC and NEI data set to associate SSC table info in to NEI
+# mrg <- merge(SCC, NEI, by.x = "SCC", by.y = "SCC")
+x <- grep("Vehicle", mrg$EI.Sector)
+V <- mrg[x, ]
+V1 <- select(V, fips:year)
+V2 <- subset(V1, fips == "24510")
+V3 <- subset(V1, fips =="06037" )
+```
+
+#### Figure 6.  A Comparison in PM2.5 from Vehicular Emissions Between Baltimore City and Loa Angeles County.
+
+```{r fig.width=7, fig.height=6}
+# Open "png" graphics device
+# png(filename = "plot6.png", width = 600, height = 480, units = "px")
+
+# Define number of grids/facets and layout 
+# grid.arrange(plot1, plot2, ncol=2)
+
+# Baltimore: Vehicular Emissions Trend
+plot1 <- ggplot(V2, aes(factor(year), Emissions)) +
+    geom_boxplot() +
+    ylim(0, 20) + xlab("Year") + ylab("PM2.5 Emissions, Tons") +
+    ggtitle("Baltimore: PM2.5 Vehicle Emissions Trend") +
+    geom_smooth(method = "lm", se=FALSE, color="green", aes(group=1)) 
+
+# Los Angeles County: Vehicular Emissions Trend
+plot2 <- ggplot(V3, aes(factor(year), Emissions)) + 
+    geom_boxplot() +
+    ylim(0, 20) + xlab("Year") + ylab("PM2.5 Emissions, Tons") +
+    ggtitle("Los Angeles: PM2.5 Vehicle Emissions Trend") + 
+    geom_smooth(method = "lm", se=FALSE, color="green", aes(group=1)) 
+
+# Display the two plots
+grid.arrange(plot1, plot2, ncol=2)
+## Comments: The the PM2.5 emissions from vehicles has gone down from 1999 to 2008. While the variability in the emissions in Baltimore City has markedly gone down along with median, the Los Angeles in 2008 data has signigicantly gone up. Also the nedian value also has gone up. 
+
+# dev.off()
+# Turn ON warning messages globally
+options(warn=0)
+```
